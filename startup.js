@@ -771,7 +771,7 @@ STAB       AUTO`, 80, 200);
     textSize(textSizeSystem.h2);
     text(`${blinkingString(">","-", 60)} PRESS SPACE TO BEGIN EXPERIMENT ${blinkingString("<","-", 60)}`, width/2, height-66);
     textSize(textSizeSystem.glitchUI);
-    text(`Press 'M' to Mute music`, width/2, height-34);
+    text(`Press 'M' to Mute Music`, width/2, height-34);
   pop();
 }
 
