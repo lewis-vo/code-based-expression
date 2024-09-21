@@ -71,6 +71,10 @@ function keyPressed() {
     bgmEnabled = !bgmEnabled;
     console.log(bgmEnabled);
   }
+
+  if (key === 'c') {
+    saveCanvas();
+  }
   /*
   if (key === '1') {
     currentScreen=0;
@@ -132,6 +136,8 @@ function keyPressed() {
 function mousePressed() {
   if (currentScreen===0) {
     if (currentDialogueIndex===3 && childScale<0.49) {
+      bumpSound.play();
+      bumpSound.setVolume(0.5);
       feedParticles.push({
         x: mouseX,
         y: mouseY
@@ -163,7 +169,7 @@ let cursorY = 0;
 let plusSymbols = [];
 let dataSymbols = [];
 
-let bgmSound, crackleSound;
+let bgmSound, crackleSound, bumpSound;
 let bgmEnabled = true;
 let globalBGMVolume = 0.26;
 
@@ -198,6 +204,7 @@ let checkImage;
 function preload() {
   bgmSound = loadSound('./assets/sounds/bgm.mp3');
   crackleSound = loadSound('./assets/sounds/crackle.mp3');
+  bumpSound = loadSound('./assets/sounds/bump.mp3');
 
   moonImage = loadImage('./assets/moon.png');
   logoImage = loadImage('./assets/logo.png');
@@ -236,7 +243,7 @@ function setup() {
   bgmSound.loop();
   bgmSound.setVolume(globalBGMVolume);
   crackleSound.loop();
-  crackleSound.setVolume(0.54);
+  crackleSound.setVolume(0.7);
 
   textFont("NotoSansMono");
   imageMode(CENTER);
