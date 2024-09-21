@@ -269,7 +269,7 @@ function setup() {
 
 function draw() {
   background(0);
-  console.log(childScale);
+  //console.log(childScale);
 
   if (bgmEnabled === true) {
     bgmSound.setVolume(globalBGMVolume);
@@ -442,7 +442,7 @@ Stage ${(currentDialogueIndex===dialogue[currentScreen].length-1 && childScale>=
 // ****************************
 function SOUND_playDialogBeep(startFrame) {
   beepOsc.amp(0.072);
-  beepOsc.freq(random((50-2)/2.2,(61-2)/2.2)*10);
+  beepOsc.freq(random((50-2)/2.2,(61-2+4)/2.2)*10);
   beepOsc.start();
   if (frameCount-startFrame>1) beepOsc.stop();
 }
