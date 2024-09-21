@@ -20,13 +20,21 @@ const dialogue = [
     "An explosion.",
     "A beat.",
     "A blip in time.",
-    "A failure...",
-    "you are anything but."],
-  [""]
+    "You're ready to change the world."],
+  ["Taking flight, you leave behind\n little ripples of change, of influence.",
+    "Your actions shift the fabric of life.",
+    "In your wake, it's only natural that the\n small seeds of life, like you once was, change too.",
+    "So, it's better to be careful,\nlest you make a wrong choice, a wrong decision.",
+    "You should know that...",
+    "...",
+    "...",
+    "...",
+    "Your actions also have consequences.",
+  ]
 ];
 
 let beepOsc;
-let currentScreen = 2;
+let currentScreen = -1;
 let currentDialogueIndex=0;
 let dialogueDisplayString="";
 
@@ -48,6 +56,11 @@ function keyPressed() {
     dialogueDisplayString="";
   }
 
+  if (key === 'm') {
+    bgmEnabled = !bgmEnabled;
+    console.log(bgmEnabled);
+  }
+  /*
   if (key === '1') {
     currentScreen=0;
     currentDialogueIndex=0;
@@ -65,6 +78,23 @@ function keyPressed() {
     currentScreen=2;
     currentDialogueIndex=0;
     dialogueDisplayString="";
+  }
+  if (key === '4') {
+    currentScreen=3;
+    currentDialogueIndex=0;
+    dialogueDisplayString="";
+  }*/
+
+  if (key === 'e') {
+    if (currentDialogueIndex===dialogue[currentScreen].length-1 && childScale>=0.49) currentScreen++;
+    if (currentScreen>3) {
+      currentScreen=3;
+    } else {
+      currentDialogueIndex=0;
+      dialogueDisplayString="";
+      childScale=0;
+      feedParticles=[];
+    };
   }
 
   if (currentScreen>=0) {
@@ -97,7 +127,6 @@ function mousePressed() {
         x: mouseX,
         y: mouseY
       });
-      console.log(feedParticles.length, childScale);
     }
   }
 }
@@ -125,13 +154,17 @@ let cursorY = 0;
 let plusSymbols = [];
 let dataSymbols = [];
 
+let bgmSound;
+let bgmEnabled = true;
+let globalBGMVolume = 0.08;
+
 // Screen -1 (Home)
 let moonImage;
 let logoImage;
 let cursorImage;
 
 // Screen 0
-let pulse1Image, pulse2Image, pulse4Image, pulse5Image;
+let pulse1Image, pulse2Image, pulse4Image, pulse5Image, pulse2ImageAlpha;
 let pulsar = [];
 let feedEasing = 0.065;
 let feedParticles = [];
@@ -140,10 +173,22 @@ let feedParticles = [];
 let chrys1Image, chrys2Image;
 
 
+// Screen 2
+let manWingsImage, chrysManImage;
+
+
+// Screen 3
+let spread1Image, spread2Image;
+
+let checkImage;
+
+
 // ****************************
 // ********** SET UP **********
 // ****************************
 function preload() {
+  bgmSound = loadSound('./assets/sounds/bgm.mp3');
+
   moonImage = loadImage('./assets/moon.png');
   logoImage = loadImage('./assets/logo.png');
   cursorImage = loadImage('./assets/cursor.png');
@@ -153,9 +198,19 @@ function preload() {
   pulse4Image = loadImage('./assets/pulse4.png');
   pulse5Image = loadImage('./assets/pulse5.png');
 
+  pulse2ImageAlpha = loadImage('./assets/pulse3.png');
 
   chrys1Image = loadImage('./assets/chrys1.png');
   chrys2Image = loadImage('./assets/chrys2.png');
+
+  manWingsImage = loadImage('./assets/man_03.png');
+  chrysManImage = loadImage('./assets/chrys_man.png');
+
+  spread1Image = loadImage('./assets/spread1.png');
+  spread2Image = loadImage('./assets/spread2.png');
+
+
+  checkImage = loadImage('./assets/check.png');
 }
 
 function randomInfluenceRate() {
@@ -168,6 +223,9 @@ function setup() {
   angleMode(DEGREES);
   noStroke();
 
+  bgmSound.loop();
+  bgmSound.setVolume(globalBGMVolume);
+
   textFont("NotoSansMono");
   imageMode(CENTER);
 
@@ -178,6 +236,7 @@ function setup() {
 
   pulse1Image.resize(2048, 2048);
   pulse2Image.resize(2048, 2048);
+  pulse2ImageAlpha.resize(2048, 2048);
   pulse4Image.resize(2048, 2048);
   pulse5Image.resize(2048, 2048);
 
@@ -185,11 +244,25 @@ function setup() {
   chrys1Image.resize(600, 600);
   chrys2Image.resize(600, 600);
 
+  otherLifes = Array(39).fill().map(e => { return {x: random(width), y: random(height), appeared: false} });
+
+  chrysManImage.resize(600, 600);
+  spread1Image.resize(600, 600);
+  spread2Image.resize(600, 600);
+
+  checkImage.resize(24,24);
+  
   initPulsar();
 }
 
 function draw() {
   background(0);
+
+  if (bgmEnabled === true) {
+    bgmSound.setVolume(globalBGMVolume);
+  } else {
+    bgmSound.setVolume(0);
+  }
 
   if (mouseIsPressed) {
   }
@@ -199,15 +272,19 @@ function draw() {
   pop();
 
   push();
-    if (currentScreen==0) SCREEN_stateOne();
+    if (currentScreen===0) SCREEN_stateOne();
   pop();
 
   push();
-    if (currentScreen==1) SCREEN_stateTwo();
+    if (currentScreen===1) SCREEN_stateTwo();
   pop();
 
   push();
-    if (currentScreen==2) SCREEN_stateThree();
+    if (currentScreen===2) SCREEN_stateThree();
+  pop();
+
+  push();
+    if (currentScreen===3) SCREEN_stateFour();
   pop();
 
   // POST_PROCESSING STUFFS
@@ -267,6 +344,52 @@ POS_Y  ${random(["12", "13", "14", "14"])}.${int(random(120, 400))}`, width-250,
       strokeWeight(1);
     
       rect(margin, 240,...stageBoxSize);
+      line(margin, 240+32, margin+stageBoxSize[0], 240+32);
+
+      push();
+        fill(255);
+        noStroke();
+        textSize(textSizeSystem.glitchUI);
+        text(`CURRENT PROGRESS`, 80+11,240+32-11);
+
+        push();
+          textAlign(LEFT, BOTTOM);
+          text(`Note:
+Stage ${(currentDialogueIndex===dialogue[currentScreen].length-1)?"completed. \nPress 'E' to continue.\n":"ongoing.\n\n"}`, 80+11,240+stageBoxSize[1]);
+
+        pop();
+        
+        translate(margin, 240+32);
+        textAlign(LEFT, TOP);
+        for(i=0;i<4; i++) {
+          push();
+            stroke(255);
+            if (i<=currentScreen) {
+              fill(0); 
+              if (i===currentScreen) fill(160); 
+            } else {
+              fill(0);
+            }
+            rect(0, 48*i, stageBoxSize[0], 48);
+            fill(0);
+            rect(0+16, 48*i+16, 14, 14);
+            if (i<=currentScreen) {
+              if (i===currentScreen) {
+                if (currentDialogueIndex===dialogue[currentScreen].length-1 && childScale>=0.49) 
+                  image(checkImage, 24, 48*i+16);
+              } else {
+                image(checkImage, 24, 48*i+16);
+              }
+            }
+          pop();
+          if (i===currentScreen) {
+            fill(0);
+          } else {
+            fill(255);
+          }
+          text(`STAGE 0${i+1}`, 11+39, 48*i+24-7);
+        }
+      pop();
     }
   pop();
 
@@ -280,7 +403,7 @@ POS_Y  ${random(["12", "13", "14", "14"])}.${int(random(120, 400))}`, width-250,
     let distY = mouseY - cursorY;
     // this increases every frame and eventually catches up
     cursorY += distY * cursorEasing;
-
+    blendMode(DIFFERENCE);
     image(cursorImage, cursorX, cursorY);
   pop();
 
@@ -303,7 +426,7 @@ POS_Y  ${random(["12", "13", "14", "14"])}.${int(random(120, 400))}`, width-250,
 // ****************************
 function SOUND_playDialogBeep(startFrame) {
   beepOsc.amp(0.07);
-  beepOsc.freq(random((50-5)/2.2,(61-5)/2.2)*10);
+  beepOsc.freq(random((50-2)/2.2,(61-2)/2.2)*10);
   beepOsc.start();
   if (frameCount-startFrame>1) beepOsc.stop();
 }
@@ -463,7 +586,7 @@ function drawDialogBox() {
   fill(0);
   textStyle(NORMAL);
   textSize(12);
-  text("Home [H]   Dialog [A][D]   MUSIC [M]", -width/2 + 80, -9);
+  text("Home [H]   Dialog [A][D]   MUTE MUSIC [M]", -width/2 + 80, -9);
 
   fill(255);
   textSize(textSizeSystem.glitchUI);
@@ -471,10 +594,14 @@ function drawDialogBox() {
 
   // SPECIAL: Screen 0
   push();
+    let finalString = "PRESS 'E' TO CONTINUE";
+    if (childScale<0.49) finalString = "CLICK TO ADD INFLUENCE";
+    if (currentScreen===3) finalString = "COMPLETED. PRESS 'H' TO GO BACK.";
     textAlign(CENTER, CENTER);
     textSize(textSizeSystem.h2);
-    if (currentDialogueIndex===3 && currentScreen===0)
-      text(`${blinkingString(">","-", 60)} CLICK TO ADD INFLUENCE ${blinkingString("<","-", 60)}`, 0,-dialogBoxSize[1]-margin-48);
+    blendMode(DIFFERENCE);
+    if (currentDialogueIndex===dialogue[currentScreen].length-1)
+      text(`${blinkingString(">","-", 60)} ${finalString} ${blinkingString("<","-", 60)}`, 0,-dialogBoxSize[1]-margin-48);
   pop();
 
 
@@ -533,6 +660,16 @@ function drawDialogBox() {
 
     if (currentDialogueIndex>0 && dialogueDisplayString.length===dialogue[currentScreen][currentDialogueIndex].length) triangle(vertex1X1, vertex1Y1, vertex2X1, vertex2Y1, vertex3X1, vertex3Y1);
   pop();
+}
+function drawCircleRings() {
+  push();
+  noFill();
+  stroke(255,70);
+  strokeWeight(0.5);
+  for(let i=0; i<19; i++) {
+    circle(0, 0, 100+(i*80));
+  }
+  pop();;
 }
 // ****************************
 // ****************************
@@ -617,6 +754,8 @@ STAB       AUTO`, 80, 200);
   textAlign(CENTER, TOP);
     textSize(textSizeSystem.h2);
     text(`${blinkingString(">","-", 60)} PRESS SPACE TO BEGIN EXPERIMENT ${blinkingString("<","-", 60)}`, width/2, height-66);
+    textSize(textSizeSystem.glitchUI);
+    text(`Press 'M' to Mute music`, width/2, height-34);
   pop();
 }
 
@@ -641,20 +780,25 @@ function SCREEN_stateOne() {
     let originX = width/2;
     let originY = height/2-30;
 
-    feedParticles.forEach(p => {
-      let distX = originX - p.x;
-      p.x += distX * feedEasing;
-    
-      let distY = originY - p.y;
-      p.y += distY * feedEasing;
+    push();
+    fill(0);
+    strokeWeight(2);
+      feedParticles.forEach(p => {
+        let distX = originX - p.x;
+        p.x += distX * feedEasing;
+      
+        let distY = originY - p.y;
+        p.y += distY * feedEasing;
 
-      if (dist(originX, originY, p.x, p.y)>2) {
-        circle(p.x, p.y, 20);
-      }
-    });
+        if (dist(originX, originY, p.x, p.y)>2) {
+          square(p.x, p.y, 18);
+        }
+      });
+    pop();
 
     translate(originX, originY);
-
+    
+    drawCircleRings();
 
     let boundaryX = (width-200) / 2;
     let boundaryY = (height-80) / 2;
@@ -777,6 +921,9 @@ function SCREEN_stateTwo() {
     });
 
     translate(originX, originY);
+
+    drawCircleRings();
+
     let boundaryX = (width-200) / 2;
     let boundaryY = (height-80) / 2;
 
@@ -799,7 +946,8 @@ function SCREEN_stateTwo() {
     
     drawPulsar(0,0);
 
-    let childScaleDist = (0.3) - childScale;
+    // Draw god's ray
+    let childScaleDist = map(currentDialogueIndex, 0, dialogue[1].length, 0.3, 0.7) - childScale;
     childScale += childScaleDist*childScaleEasing;
     scale(childScale);
     blendMode(ADD);
@@ -813,9 +961,9 @@ function SCREEN_stateTwo() {
   push();
     let chrysOffset =  -80;
     if (frameCount % int(random(24,45)) === 0) {
-      scale(0.5+map(currentDialogueIndex, 0, dialogue[1].length, 0, 0.5));
+      scale(0.3+map(currentDialogueIndex, 0, dialogue[1].length, 0, 0.48));
     } else {
-      scale(0.3+map(currentDialogueIndex, 0, dialogue[1].length, 0, 0.5));
+      scale(0.2+map(currentDialogueIndex, 0, dialogue[1].length, 0, 0.48));
     }
     if (frameCount % int(random(24,45)) === 0) {
       rotate(-2+random([12,-12])*map(currentDialogueIndex, 0, dialogue[1].length, 0, 1));
@@ -849,9 +997,9 @@ function SCREEN_stateThree() {
   textStyle(NORMAL);
   
   textAlign(LEFT, CENTER);
-  text(`STAGE 02`, 80, 140);
+  text(`STAGE 03`, 80, 140);
   textSize(textSizeSystem.h1);
-  text(`THE GROWTH${blinkingString("_", " ", 60)}`, 80, 175);
+  text(`THE EXPANSION${blinkingString("_", " ", 60)}`, 80, 175);
 
   push();
   // Draw the arc
@@ -885,13 +1033,13 @@ function SCREEN_stateThree() {
     if (currentDialogueIndex===0) {
       influenceParticles.forEach(p => {
         let distX = originX - p.x;
-        p.x += distX * p.rate + random(0, 0.01);
+        p.x += distX * (p.rate+0.025) + random(0, 0.01);
       
         let distY = originY - p.y;
-        p.y += distY * p.rate + random(0, 0.01);
+        p.y += distY * (p.rate+0.025) + random(0, 0.01);
         
   
-        if (dist(originX, originY, p.x, p.y)<=random(5,40) || dist(originX, originY, p.x, p.y)>320) {
+        if (dist(originX, originY, p.x, p.y)<=random(5,40) || dist(originX, originY, p.x, p.y)>420) {
           p.x = random(width);
           p.y = random(height);
           p.rate = randomInfluenceRate();
@@ -929,6 +1077,9 @@ function SCREEN_stateThree() {
     }
 
     translate(originX, originY);
+
+    drawCircleRings();
+
     let boundaryX = (width-200) / 2;
     let boundaryY = (height-80) / 2;
 
@@ -949,21 +1100,177 @@ function SCREEN_stateThree() {
 
 
     
-    //drawPulsar(0,0);
+    drawPulsar(0,0);
 
-    let childScaleDist = (0) - childScale;
+    // Draw god's ray
+    let childScaleDist = ((currentDialogueIndex===0)? 0.05 : 0.7) - childScale;
     childScale += childScaleDist*childScaleEasing;
     scale(childScale);
     blendMode(ADD);
     rotate(frameCount / 15);
+    tint(255, 127);
     image(pulse1Image, random(-0.5,0.5), random(-0.5,0.5));
     rotate(frameCount / 30);
     image(pulse2Image, random(-0.5,0.5), random(-0.5,0.5));
+
+    blendMode(BLEND);
   pop();
 
   translate(width/2,height/2);
   push();
+    if (currentDialogueIndex===0) {
+      //blendMode(ADD);
+      let chrysOffset =  -80;
+      if (frameCount % int(random(24,45)) === 0) {
+        scale(0.3+map(1, 0, 1, 0, 0.6));
+      } else {
+        scale(0.2+map(1, 0, 1, 0, 0.6));
+      }
+      if (frameCount % int(random(24,45)) === 0) {
+        rotate(-2+random([12,-12])*map(1, 0, 1, 0, 1));
+      } else {
+        rotate(-2);
+      }
 
+      tint(255, 255);
+      image(chrysManImage, 0, chrysOffset);
+      blendMode(ADD);
+      tint(255, random(30,40));
+      image(chrysManImage, 0, chrysOffset);
+
+      blendMode(ADD);
+      if (frameCount % int(random(24,45)) === 0) {
+        tint(255, 127);
+        image(chrysManImage, random(-10,10), random(-10,10)+chrysOffset);
+      }
+    }
+  pop();
+  push();
+    push();
+    scale(0.5);
+    if (currentDialogueIndex!==0) {
+      if (frameCount % int(random(24,45)) === 0) {
+        rotate(random(2,-2));
+      }
+      let wingsOffset = [-100,-100];
+      image(manWingsImage, ...wingsOffset);
+      blendMode(ADD);
+      if (frameCount % int(random(0,60)) === 0) {
+        if (currentDialogueIndex===0) {
+          tint(255, 70);
+        } else {
+          tint(255, 127);
+        }
+        image(manWingsImage, random(-20,-20)+wingsOffset[0], random(-20,20)+wingsOffset[1]);
+      }
+    }
+    pop();
+  pop();
+
+}
+
+let otherLifes = [];
+function SCREEN_stateFour() {
+  background(0);
+
+  fill(255);
+  textSize(textSizeSystem.glitchUI);
+  textStyle(NORMAL);
+  
+  textAlign(LEFT, CENTER);
+  text(`STAGE 04`, 80, 140);
+  textSize(textSizeSystem.h1);
+  text(`THE AFTERSHOCK${blinkingString("_", " ", 60)}`, 80, 175);
+
+  push();
+    stroke(255, 255);
+    strokeWeight(0.5);
+
+    let originX = width/2;
+    let originY = height/2-30;
+
+    if (currentDialogueIndex>=3) {
+      otherLifes.forEach((life, index) => {
+        if (frameCount % (index*2) === 0) life.appeared = true;
+        if (life.appeared === true) {
+          circle(life.x, life.y, random(4.2,6));
+          textSize(textSizeSystem.glitchNum);
+          textSize(NORMAL);
+          text(`CHANGE OBSERV${random(['E', 'e', '3', '4', '1'])}D ${int(random(24,56))}`, life.x-5, life.y+16);
+          push();
+            blendMode(BLEND);
+            translate(life.x, life.y);
+            scale(index*0.01+random(0.01, 0.05));
+            //tint(255, 70);
+            rotate(index*2);
+            image(pulse2ImageAlpha, random(-0.5,0.5), random(-0.5,0.5));
+          pop();
+        }
+      });
+    } else {
+      otherLifes.forEach(life => {
+        life.appeared = false;
+      })
+    }
+
+    translate(originX, originY);
+
+    drawCircleRings();
+
+    let boundaryX = (width-200) / 2;
+    let boundaryY = (height-80) / 2;
+
+    line(-boundaryX, 0, boundaryX, 0);
+    line(0, -boundaryY, 0, boundaryY);
+
+    let increment = 19;
+    let unitHeight = 6;
+
+    for (let i=0; i<=boundaryX; i+=increment) {
+      line(i, unitHeight, i, -unitHeight);
+      line(-i, unitHeight, -i, -unitHeight);
+    }
+    for (let i=0; i<=boundaryY; i+=increment) {
+      line(unitHeight, i, -unitHeight, i);
+      line(unitHeight, -i, -unitHeight, -i);
+    }
+
+
+    
+    drawPulsar(0,0);
+
+    // Draw god's ray
+    let childScaleDist = 0.7 - childScale;
+    childScale += childScaleDist*childScaleEasing;
+    scale(childScale);
+    blendMode(ADD);
+    rotate(frameCount / 15);
+    tint(255, 100);
+    image(pulse1Image, random(-0.5,0.5), random(-0.5,0.5));
+    rotate(frameCount / 30);
+    tint(255, 100);
+    image(pulse2Image, random(-0.5,0.5), random(-0.5,0.5));
+
+  pop();
+
+  translate(width/2,height/2);
+  push();
+    let currentImage = (fract(frameCount/70)>0.5) ? spread2Image : spread1Image;
+    let spreadOffset = -30;
+    if (fract(frameCount/70)>0.5) {
+      image(currentImage, 0, -5);
+    } else {
+      image(currentImage, 0, spreadOffset);
+    }
+    blendMode(ADD);
+      if (frameCount % int(random(0,60)) === 0) {
+        if (currentDialogueIndex===0) {
+          tint(255, 70);
+        } else {
+          tint(255, 127);
+        }
+        image(currentImage, random(-20,-20), random(-20,20)+spreadOffset);
+      }
   pop();
 
 }
