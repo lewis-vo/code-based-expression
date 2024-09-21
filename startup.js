@@ -50,6 +50,17 @@ function keyPressed() {
     childScale=0;
     feedParticles=[];
   }
+  if (keyCode === 32 && currentScreen>=0) {
+    if (dialogueDisplayString.length < dialogue[currentScreen][currentDialogueIndex].length) {
+      return;
+    }
+    if (currentDialogueIndex === dialogue[currentScreen].length-1) {
+      return;
+    }
+    currentDialogueIndex++;
+    //if (currentDialogueIndex > dialogue[currentScreen].length-1) currentDialogueIndex=0;
+    dialogueDisplayString="";
+  }
   if (key === 'h' && currentScreen>=0) {
     currentScreen = -1;
     currentDialogueIndex=0;
@@ -100,7 +111,7 @@ function keyPressed() {
   if (currentScreen>=0) {
     if (key === 'd') {
       if (dialogueDisplayString.length < dialogue[currentScreen][currentDialogueIndex].length) {
-        //return;
+        return;
       }
       if (currentDialogueIndex === dialogue[currentScreen].length-1) {
         return;
