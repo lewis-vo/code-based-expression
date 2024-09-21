@@ -343,6 +343,9 @@ POS_Y  ${random(["12", "13", "14", "14"])}.${int(random(120, 400))}`, width-250,
       fill(0);
       strokeWeight(1);
     
+      let isAtTheEnd = (currentDialogueIndex===dialogue[currentScreen].length-1 && childScale>=0.49);
+      if (isAtTheEnd===true) translate(random(-1,4.5), 0);
+
       rect(margin, 240,...stageBoxSize);
       line(margin, 240+32, margin+stageBoxSize[0], 240+32);
 
@@ -355,7 +358,7 @@ POS_Y  ${random(["12", "13", "14", "14"])}.${int(random(120, 400))}`, width-250,
         push();
           textAlign(LEFT, BOTTOM);
           text(`Note:
-Stage ${(currentDialogueIndex===dialogue[currentScreen].length-1)?"completed. \nPress 'E' to continue.\n":"ongoing.\n\n"}`, 80+11,240+stageBoxSize[1]);
+Stage ${(currentDialogueIndex===dialogue[currentScreen].length-1 && childScale>=0.49)?"completed. \nPress 'E' to continue.\n":"ongoing.\n"}`, 80+11,240+stageBoxSize[1]);
 
         pop();
         
