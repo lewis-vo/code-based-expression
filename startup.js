@@ -22,7 +22,7 @@ const dialogue = [
     "A blip in time.",
     "You're ready to change the world."],
   ["Taking flight, you leave behind\n little ripples of change, of influence.",
-    "Your actions shift the fabric of life.",
+    "Your influence shifts the fabric of life.",
     "In your wake, it's only natural that the\n small seeds of life, like you once was, change too.",
     "So, it's better to be careful,\nlest you make a wrong choice, a wrong decision.",
     "You should know that...",
@@ -49,6 +49,7 @@ function keyPressed() {
 
     childScale=0;
     feedParticles=[];
+    finalFeedParticles=[];
   }
   if (keyCode === 32 && currentScreen>=0) {
     if (dialogueDisplayString.length < dialogue[currentScreen][currentDialogueIndex].length) {
@@ -137,10 +138,19 @@ function mousePressed() {
   if (currentScreen===0) {
     if (currentDialogueIndex===3 && childScale<0.49) {
       bumpSound.play();
-      bumpSound.setVolume(0.5);
+      if (bgmEnabled === true) {
+        bumpSound.setVolume(0.5);
+      } else {
+        bumpSound.setVolume(0);
+      }
       feedParticles.push({
         x: mouseX,
         y: mouseY
+      });
+      finalFeedParticles.push({
+        x: mouseX,
+        y: mouseY,
+        appeared: false,
       });
     }
   }
@@ -155,7 +165,7 @@ const textSizeSystem = {
   glitchNum: 10,
   dialogue: 16,
   h1: 28,
-  h2: 20
+  h2: 20,
 };
 
 // ****************************
@@ -183,9 +193,10 @@ let pulse1Image, pulse2Image, pulse4Image, pulse5Image, pulse2ImageAlpha;
 let pulsar = [];
 let feedEasing = 0.065;
 let feedParticles = [];
+let finalFeedParticles = [];
 
 // Screen 1
-let chrys1Image, chrys2Image;
+let chrys1Image, chrys2Image, chrys3Image;
 
 
 // Screen 2
@@ -219,6 +230,7 @@ function preload() {
 
   chrys1Image = loadImage('./assets/chrys1.png');
   chrys2Image = loadImage('./assets/chrys2.png');
+  chrys3Image = loadImage('./assets/chrys3.png');
 
   manWingsImage = loadImage('./assets/man_03.png');
   chrysManImage = loadImage('./assets/chrys_man.png');
@@ -262,14 +274,17 @@ function setup() {
   influenceParticles = Array(250).fill(0).map(e => { return {x: random(width), y: random(height), rate: randomInfluenceRate() } })
   chrys1Image.resize(600, 600);
   chrys2Image.resize(600, 600);
+  chrys3Image.resize(600, 600);
 
-  otherLifes = Array(39).fill().map(e => { return {x: random(width), y: random(height), appeared: false} });
+  otherLifes = Array(38).fill().map(e => { return {x: random(width), y: random(height), appeared: false} });
 
   chrysManImage.resize(600, 600);
   spread1Image.resize(600, 600);
   spread2Image.resize(600, 600);
 
   checkImage.resize(24,24);
+
+  finalFeedParticles = Array(20).fill().map(e => {return {x: random(width), y: random(height), appeared: false}});
   
   initPulsar();
 }
@@ -280,8 +295,10 @@ function draw() {
 
   if (bgmEnabled === true) {
     bgmSound.setVolume(globalBGMVolume);
+    crackleSound.setVolume(0.7);
   } else {
     bgmSound.setVolume(0);
+    crackleSound.setVolume(0);
   }
 
   if (mouseIsPressed) {
@@ -318,8 +335,8 @@ function draw() {
     textAlign(LEFT, BOTTOM);
     text(`STAT   
 DRIVE  L:\\CT_TEST\\
-POS_X  ${random(["40", "41", "41", "41", "42"])}.${int(random(100, 300))}
-POS_Y  ${random(["12", "13", "14", "14"])}.${int(random(120, 400))}`, width-250, height-50);
+POS_X  ${mouseX + random([4, 6, 3, 2, 7])}.${int(random(100, 300))}
+POS_Y  ${mouseY + random([1, 4, 2, 9])}.${int(random(120, 400))}`, width-250, height-50);
 
     textAlign(LEFT, TOP);
     text(`CHAOS_THEORY_TEST_SUBJECT.lwv`, 80, 60);
@@ -364,7 +381,7 @@ POS_Y  ${random(["12", "13", "14", "14"])}.${int(random(120, 400))}`, width-250,
       strokeWeight(1);
     
       let isAtTheEnd = (currentDialogueIndex===dialogue[currentScreen].length-1 && childScale>=0.49);
-      if (isAtTheEnd===true) translate(random(-1,4.5), 0);
+      //if (isAtTheEnd===true) translate(random(-1,4.5), 0);
 
       rect(margin, 240,...stageBoxSize);
       line(margin, 240+32, margin+stageBoxSize[0], 240+32);
@@ -377,8 +394,8 @@ POS_Y  ${random(["12", "13", "14", "14"])}.${int(random(120, 400))}`, width-250,
 
         push();
           textAlign(LEFT, BOTTOM);
-          text(`Note:
-Stage ${(currentDialogueIndex===dialogue[currentScreen].length-1 && childScale>=0.49)?"completed. \nPress 'E' to continue.\n":"ongoing.\n"}`, 80+11,240+stageBoxSize[1]);
+          text(`TEXT READ: ${currentDialogueIndex+1}/${dialogue[currentScreen].length}
+Stage ${(currentDialogueIndex===dialogue[currentScreen].length-1 && childScale>=0.49)?"completed. \n":"ongoing.\n"}`, 80+11,240+stageBoxSize[1]);
 
         pop();
         
@@ -389,7 +406,7 @@ Stage ${(currentDialogueIndex===dialogue[currentScreen].length-1 && childScale>=
             stroke(255);
             if (i<=currentScreen) {
               fill(0); 
-              if (i===currentScreen) fill(160); 
+              if (i===currentScreen) fill(80); 
             } else {
               fill(0);
             }
@@ -406,7 +423,7 @@ Stage ${(currentDialogueIndex===dialogue[currentScreen].length-1 && childScale>=
             }
           pop();
           if (i===currentScreen) {
-            fill(0);
+            fill(255);
           } else {
             fill(255);
           }
@@ -448,7 +465,11 @@ Stage ${(currentDialogueIndex===dialogue[currentScreen].length-1 && childScale>=
 // ********* FEATURES *********
 // ****************************
 function SOUND_playDialogBeep(startFrame) {
-  beepOsc.amp(0.072);
+  if (bgmEnabled === true) {
+    beepOsc.amp(0.072);
+  } else {
+    beepOsc.amp(0);
+  }
   beepOsc.freq(random((50-2)/2.2,(61-2+4)/2.2)*10);
   beepOsc.start();
   if (frameCount-startFrame>1) beepOsc.stop();
@@ -609,22 +630,32 @@ function drawDialogBox() {
   fill(0);
   textStyle(NORMAL);
   textSize(12);
-  text("Home [H]   Dialog [A][D]   MUTE MUSIC [M]", -width/2 + 80, -9);
+  text("Home [H]   Dialog [SPACE]   MUTE MUSIC [M]", -width/2 + 80, -9);
 
   fill(255);
   textSize(textSizeSystem.glitchUI);
   text(`MIC. FEED`, -dialogBoxSize[0]/2+10,-dialogBoxSize[1]-margin-9);
 
-  // SPECIAL: Screen 0
   push();
-    let finalString = "PRESS 'E' TO CONTINUE";
-    if (childScale<0.49) finalString = "CLICK TO ADD INFLUENCE";
-    if (currentScreen===3) finalString = "COMPLETED. PRESS 'H' TO GO BACK.";
     textAlign(CENTER, CENTER);
-    textSize(textSizeSystem.h2);
+    textSize(textSizeSystem.dialogue);
     blendMode(DIFFERENCE);
-    if (currentDialogueIndex===dialogue[currentScreen].length-1)
-      text(`${blinkingString(">","-", 60)} ${finalString} ${blinkingString("<","-", 60)}`, 0,-dialogBoxSize[1]-margin-48);
+   
+    let displayString = "PRESS 'SPACE' TO CONTINUE";
+    let completeString = "COMPLETED. PRESS 'E' TO GO TO NEXT STAGE";
+    let finalString = "FINISHED. PRESS 'H' TO GO BACK.";
+
+    if (childScale<0.49) completeString = "CLICK TO ADD INFLUENCE";
+    if (currentScreen===1) displayString = "PRESS 'SPACE' TO CONTINUE; HOVER TO SEE INSIDE CHRYSALIS"
+    if (currentDialogueIndex === dialogue[currentScreen].length-1) {
+      if (currentScreen!==3) {
+        text(`${blinkingString(">","-", 60)} ${completeString} ${blinkingString("<","-", 60)}`, random(-1,1),-dialogBoxSize[1]-margin-48);
+      } else {
+        text(`${blinkingString(">","-", 60)} ${finalString} ${blinkingString("<","-", 60)}`, random(-1,1),-dialogBoxSize[1]-margin-48);
+      }
+    } else {
+      text(`${blinkingString(">","-", 60)} ${displayString} ${blinkingString("<","-", 60)}`, random(-1,1),-dialogBoxSize[1]-margin-48);
+    }
   pop();
 
 
@@ -684,13 +715,19 @@ function drawDialogBox() {
     if (currentDialogueIndex>0 && dialogueDisplayString.length===dialogue[currentScreen][currentDialogueIndex].length) triangle(vertex1X1, vertex1Y1, vertex2X1, vertex2Y1, vertex3X1, vertex3Y1);
   pop();
 }
+
+let ringsSpacing = 80;
+
 function drawCircleRings() {
+  let finalMap = map(dist(mouseX, mouseY, width/2, height/2), 0, 735, 65, 95);
+  let distR = finalMap - ringsSpacing;
+      ringsSpacing += distR * 0.023;
   push();
   noFill();
   stroke(255,70);
   strokeWeight(0.5);
   for(let i=0; i<19; i++) {
-    circle(0, 0, 100+(i*80));
+    circle(0, 0, 100+(i*ringsSpacing));
   }
   pop();;
 }
@@ -1003,6 +1040,20 @@ function SCREEN_stateTwo() {
     tint(255, map(currentDialogueIndex, 0, dialogue[1].length, 0, 255));
     image(chrys2Image, 0, chrysOffset);
 
+    //console.log(mouseX, mouseY);
+    if (mouseX>564 && mouseX < 716 && mouseY>154 && mouseY < 463) {
+      push();
+        tint(255,255);
+        scale(1.3);
+        image(chrys3Image, 0, chrysOffset);
+        blendMode(ADD);
+        if (frameCount % int(random(24,45)) === 0) {
+          tint(255, 127);
+          image(chrys3Image, random(-10,10), random(-10,10)+chrysOffset);
+        }
+      pop();
+    }
+
     blendMode(ADD);
     if (frameCount % int(random(24,45)) === 0) {
       tint(255, 127);
@@ -1214,7 +1265,7 @@ function SCREEN_stateFour() {
 
     if (currentDialogueIndex>=3) {
       otherLifes.forEach((life, index) => {
-        if (frameCount % (index*2) === 0) life.appeared = true;
+        if (frameCount % ((index+1)*2) === 0) life.appeared = true;
         if (life.appeared === true) {
           circle(life.x, life.y, random(4.2,6));
           textSize(textSizeSystem.glitchNum);
@@ -1233,7 +1284,7 @@ function SCREEN_stateFour() {
     } else {
       otherLifes.forEach(life => {
         life.appeared = false;
-      })
+      });
     }
 
     translate(originX, originY);
@@ -1275,6 +1326,47 @@ function SCREEN_stateFour() {
     image(pulse2Image, random(-0.5,0.5), random(-0.5,0.5));
 
   pop();
+
+  if (currentDialogueIndex>0) {
+    push();
+    fill(0);
+    strokeWeight(1.5);
+    stroke(255, random(100,160));
+    finalFeedParticles.forEach((p, index) => {
+      let nextIndex = index+1;
+      if (nextIndex===finalFeedParticles.length) nextIndex = 0;
+      let nextP = finalFeedParticles[nextIndex];
+      line(p.x+8, p.y+8, nextP.x+8, nextP.y+8);
+    });
+    pop();
+  }
+  
+  if (currentDialogueIndex>=0) {
+    push();
+    fill(0);
+    strokeWeight(1.5);
+    stroke(255);
+    finalFeedParticles.forEach((p, index) => {
+      if (frameCount % ((index+1)*2) === 0) p.appeared = true;
+      if (p.appeared===true) {
+        if (currentDialogueIndex>=3) {
+          square(p.x+random(-0.5, 0.5)+4, p.y+random(-0.5, 0.5)+4, 8);
+        } else {
+          square(p.x+random(-0.5, 0.5), p.y+random(-0.5, 0.5), 16);
+        }
+        if (currentDialogueIndex<3) {
+          push();
+            fill(255);
+            noStroke(0);
+            textSize(textSizeSystem.glitchNum);
+            textSize(NORMAL);
+            text(`INITIAL INFLUENCE`, p.x-5, p.y+32);
+          pop();
+        }
+      }
+    });
+    pop();
+  }
 
   translate(width/2,height/2);
   push();
